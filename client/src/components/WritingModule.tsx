@@ -234,7 +234,6 @@ const WritingModule: React.FC<WritingModuleProps> = ({ onComplete }) => {
         </div>
 
         <div className="top-bar-right">
-          {/* Timer - Auto Started */}
           <div className="timer-container">
             <Clock className="timer-icon" />
             <Timer duration={3600} onTimeUp={handleTimeUp} />
@@ -317,6 +316,9 @@ const WritingModule: React.FC<WritingModuleProps> = ({ onComplete }) => {
           onClick={() => handleTaskSwitch('task2')}
           className={`tab-premium ${activeTask === 'task2' ? 'active' : ''} ${!isTask1Complete() ? 'locked' : ''}`}
           disabled={!isTask1Complete()}
+          {...(!isTask1Complete() && { 
+            title: `⚠️ Complete Task 1 first (${task1WordCount}/${writingTest.task1.wordCount} words)` 
+          })}
         >
           <div className="tab-content">
             <div className="tab-header">
@@ -345,7 +347,6 @@ const WritingModule: React.FC<WritingModuleProps> = ({ onComplete }) => {
         {/* Task 1 */}
         {activeTask === 'task1' && (
           <>
-            {/* Instructions Panel */}
             <div className="instructions-panel">
               <div className="panel-header">
                 <h2 className="panel-title">{writingTest.task1.title}</h2>
@@ -386,7 +387,6 @@ const WritingModule: React.FC<WritingModuleProps> = ({ onComplete }) => {
               </div>
             </div>
 
-            {/* Response Panel */}
             <div className="response-panel">
               <div className="response-header">
                 <h3 className="response-title">Your Response</h3>
@@ -436,7 +436,6 @@ Remember to:
         {/* Task 2 */}
         {activeTask === 'task2' && (
           <>
-            {/* Instructions Panel */}
             <div className="instructions-panel">
               <div className="panel-header">
                 <h2 className="panel-title">{writingTest.task2.title}</h2>
@@ -493,7 +492,6 @@ Remember to:
               </div>
             </div>
 
-            {/* Response Panel */}
             <div className="response-panel">
               <div className="response-header">
                 <h3 className="response-title">Your Essay</h3>

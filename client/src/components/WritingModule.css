@@ -54,52 +54,6 @@
   margin: 0;
 }
 
-/* Save Status Badge */
-.save-status-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 20px;
-  background: #f7fafc;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.status-icon {
-  width: 16px;
-  height: 16px;
-}
-
-.status-icon.saved {
-  color: #10b981;
-}
-
-.status-icon.unsaved {
-  color: #f59e0b;
-}
-
-.status-text.saved {
-  color: #10b981;
-}
-
-.status-text.saving {
-  color: #3b82f6;
-}
-
-.status-text.unsaved {
-  color: #f59e0b;
-}
-
-.saving-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid #e2e8f0;
-  border-top-color: #3b82f6;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
 /* Timer Container */
 .timer-container {
   display: flex;
@@ -117,28 +71,6 @@
   width: 18px;
   height: 18px;
   color: #f59e0b;
-}
-
-/* Start Button */
-.btn-start-premium {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-.btn-start-premium:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
 }
 
 /* Progress Overview Bar */
@@ -230,8 +162,54 @@
 }
 
 .tab-premium:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Enhanced Tooltip for Locked Tab - ONLY when locked */
+.tab-premium.locked {
+  opacity: 0.6;
+  cursor: not-allowed;
+  position: relative;
+}
+
+.tab-premium.locked:hover {
+  transform: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Custom tooltip styling - ONLY for locked tabs */
+.tab-premium.locked[title]:hover::before {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 10px;
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.95);
+  color: white;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* Tooltip arrow - ONLY for locked tabs */
+.tab-premium.locked[title]:hover::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 2px;
+  border: 6px solid transparent;
+  border-top-color: rgba(239, 68, 68, 0.95);
+  z-index: 1000;
+  pointer-events: none;
 }
 
 .tab-content {
@@ -249,6 +227,9 @@
   font-size: 18px;
   font-weight: 700;
   color: #1a202c;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .tab-time {
@@ -277,6 +258,12 @@
 
 .tab-word-count .insufficient {
   color: #ef4444;
+}
+
+.locked-text {
+  font-size: 12px;
+  color: #ef4444;
+  font-weight: 500;
 }
 
 /* Main Content Grid */
@@ -580,7 +567,7 @@
 /* Action Buttons */
 .action-buttons-container {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 15px;
 }
 
@@ -595,18 +582,6 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-}
-
-.btn-save {
-  background: #f1f5f9;
-  color: #475569;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.btn-save:hover:not(:disabled) {
-  background: #e2e8f0;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
 .btn-submit {
@@ -624,6 +599,11 @@
   opacity: 0.5;
   cursor: not-allowed;
   transform: none !important;
+}
+
+.btn-full-width {
+  width: 100%;
+  justify-content: center;
 }
 
 /* Loading & Error States */
@@ -743,3 +723,4 @@
 .instructions-panel::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
