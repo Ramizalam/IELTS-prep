@@ -10,6 +10,7 @@ const ListeningModule: React.FC<ListeningModuleProps> = ({ onComplete }) => {
   const [currentSection, setCurrentSection] = useState(1);
   const [answers, setAnswers] = useState<(string | number)[]>(Array(40).fill(''));
   const [isPlaying, setIsPlaying] = useState(false);
+  const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
   const [timeSpent, setTimeSpent] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +49,21 @@ const ListeningModule: React.FC<ListeningModuleProps> = ({ onComplete }) => {
     const newAnswers = [...answers];
     newAnswers[questionIndex] = value;
     setAnswers(newAnswers);
+  };
+
+  const toggleAudio = () => {
+    if (audioRef) {
+      if (isPlaying) {
+        audioRef.pause();
+      } else {
+        audioRef.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleAudioEnded = () => {
+    setIsPlaying(false);
   };
 
   const calculateScore = () => {
@@ -176,20 +192,30 @@ const ListeningModule: React.FC<ListeningModuleProps> = ({ onComplete }) => {
 
         {!loading && !error && sections.length > 0 && (
         <>
-        {/* Audio Player Simulation */}
+        {/* Audio Player */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Audio Player</h3>
             <div className="flex items-center space-x-2">
               <Volume2 className="w-5 h-5 text-gray-500" />
-              <span className="text-sm text-gray-500">Volume: 75%</span>
+              <span className="text-sm text-gray-500">Library Audio</span>
             </div>
           </div>
           
           <div className="bg-gray-100 rounded-lg p-4">
+            <audio
+              ref={setAudioRef}
+              onEnded={handleAudioEnded}
+              className="w-full mb-4"
+              controls
+            >
+              <source src={`${import.meta.env?.VITE_API_URL || 'http://localhost:5000'}/public/Librarian audio.mp3`} type="audio/mpeg" />
+              Your browser does not support the audio element.
+            </audio>
+            
             <div className="flex items-center justify-center space-x-4">
               <button
-                onClick={() => setIsPlaying(!isPlaying)}
+                onClick={toggleAudio}
                 className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
               >
                 {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
@@ -197,8 +223,8 @@ const ListeningModule: React.FC<ListeningModuleProps> = ({ onComplete }) => {
               </button>
             </div>
             <div className="mt-4 bg-blue-100 text-blue-800 text-sm p-3 rounded">
-              <p><strong>Note:</strong> In the actual test, audio will play automatically and cannot be paused or replayed. 
-              This simulation allows you to control playback for practice purposes.</p>
+              <p><strong>Note:</strong> In the actual IELTS test, audio will play automatically and cannot be paused or replayed. 
+              This practice version allows you to control playback for learning purposes.</p>
             </div>
           </div>
         </div>
