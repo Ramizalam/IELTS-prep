@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Clock, MessageSquare, User, Volume2, Play, Pause, StopCircle } from 'lucide-react';
+import { Mic, MicOff, Clock, MessageSquare, User, Volume2, Play, Pause, StopCircle, Speaker } from 'lucide-react';
 
 interface SpeakingModuleProps {
   onComplete: (results: {
@@ -25,6 +25,7 @@ const SpeakingModule: React.FC<SpeakingModuleProps> = ({ onComplete }) => {
   const [timeSpent, setTimeSpent] = useState(0);
   const [speakingParts, setSpeakingParts] = useState<SpeakingPart[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isQuestionPlaying, setIsQuestionPlaying] = useState(false);
 
   // Fetch speaking test data from backend
   useEffect(() => {
@@ -36,7 +37,6 @@ const SpeakingModule: React.FC<SpeakingModuleProps> = ({ onComplete }) => {
         setSpeakingParts(data.parts || []);
       } catch (err) {
         console.error(err);
-        // Fallback to hardcoded data if backend fails
         setSpeakingParts([
           {
             title: 'Part 1 - Introduction and Interview',
@@ -46,7 +46,7 @@ const SpeakingModule: React.FC<SpeakingModuleProps> = ({ onComplete }) => {
               'What is your full name?',
               'Where are you from?',
               'Do you work or are you a student?',
-              'What do you like about your job/studies?',
+              'What do you like about your job or studies?',
               'Do you enjoy reading books? Why or why not?'
             ]
           },
@@ -55,7 +55,7 @@ const SpeakingModule: React.FC<SpeakingModuleProps> = ({ onComplete }) => {
             duration: '3-4 minutes',
             description: 'Speak for 1-2 minutes on a given topic',
             questions: [
-              `Describe a memorable journey you have taken.\n\nYou should say:\n• Where you went\n• Who you went with\n• What you did\n• Why it was memorable\n\nYou have 1 minute to prepare.`
+              `Describe a memorable journey you have taken. You should say: where you went, who you went with, what you did during the journey, and explain why this journey was memorable for you. You have 1 minute to prepare.`
             ]
           },
           {
@@ -64,8 +64,8 @@ const SpeakingModule: React.FC<SpeakingModuleProps> = ({ onComplete }) => {
             description: 'Abstract discussion',
             questions: [
               'Why do you think people enjoy traveling?',
-              'How has tourism changed in your country?',
-              'What are the benefits of international tourism?'
+              'How has tourism changed in your country over the years?',
+              'What are the benefits and drawbacks of international tourism?'
             ]
           }
         ]);
@@ -84,8 +84,50 @@ const SpeakingModule: React.FC<SpeakingModuleProps> = ({ onComplete }) => {
     return () => clearInterval(interval);
   }, []);
 
+  // Auto-play question when it changes
+  useEffect(() => {
+    if (speakingParts.length > 0 && currentPart > 0 && currentQuestion >= 0) {
+      const currentPartData = speakingParts[currentPart - 1];
+      if (currentPartData && currentPartData.questions[currentQuestion]) {
+        // Small delay before playing question
+        setTimeout(() => {
+          playQuestion(currentPartData.questions[currentQuestion]);
+        }, 500);
+      }
+    }
+  }, [currentPart, currentQuestion, speakingParts]);
+
+  const playQuestion = (questionText: string) => {
+    if ('speechSynthesis' in window) {
+      // Stop any ongoing speech
+      window.speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(questionText);
+      
+      // Configure voice settings
+      utterance.rate = 0.9; // Slightly slower for clarity
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      utterance.lang = 'en-GB'; // British English (IELTS standard)
+      
+      // Try to use a British English voice if available
+      const voices = window.speechSynthesis.getVoices();
+      const britishVoice = voices.find(voice => 
+        voice.lang === 'en-GB' || voice.name.includes('British') || voice.name.includes('UK')
+      );
+      if (britishVoice) {
+        utterance.voice = britishVoice;
+      }
+      
+      utterance.onstart = () => setIsQuestionPlaying(true);
+      utterance.onend = () => setIsQuestionPlaying(false);
+      utterance.onerror = () => setIsQuestionPlaying(false);
+      
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
   const handleResponseComplete = async (responseData: { transcript: string; audioUrl: string }) => {
-    // Evaluate response
     try {
       const evalRes = await fetch('http://localhost:5000/api/speaking/evaluate', {
         method: 'POST',
@@ -102,7 +144,6 @@ const SpeakingModule: React.FC<SpeakingModuleProps> = ({ onComplete }) => {
       const newResponses = [...responses, { ...responseData, evaluation }];
       setResponses(newResponses);
 
-      // Move to next question or part
       const currentPartData = speakingParts[currentPart - 1];
       if (currentQuestion < currentPartData.questions.length - 1) {
         setCurrentQuestion(currentQuestion + 1);
@@ -110,7 +151,6 @@ const SpeakingModule: React.FC<SpeakingModuleProps> = ({ onComplete }) => {
         setCurrentPart(currentPart + 1);
         setCurrentQuestion(0);
       } else {
-        // Complete test - calculate final scores
         completeTest(newResponses);
       }
     } catch (err) {
@@ -120,7 +160,6 @@ const SpeakingModule: React.FC<SpeakingModuleProps> = ({ onComplete }) => {
   };
 
   const completeTest = (allResponses: any[]) => {
-    // Calculate average scores per part
     const part1Responses = allResponses.slice(0, speakingParts[0]?.questions.length || 5);
     const part2Responses = allResponses.slice(
       speakingParts[0]?.questions.length || 5,
@@ -165,7 +204,7 @@ const SpeakingModule: React.FC<SpeakingModuleProps> = ({ onComplete }) => {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-800">IELTS Speaking Test</h1>
-                <p className="text-gray-600">3 parts • 11-14 minutes total</p>
+                <p className="text-gray-600">3 parts • 11-14 minutes total • Two-way interview</p>
               </div>
             </div>
             <div className="text-right bg-blue-50 px-4 py-2 rounded-lg">
@@ -184,10 +223,11 @@ const SpeakingModule: React.FC<SpeakingModuleProps> = ({ onComplete }) => {
               <User className="w-6 h-6 text-green-600" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-800 mb-2 text-lg">Examiner Instructions</h3>
+              <h3 className="font-semibold text-gray-800 mb-2 text-lg">🎙️ AI Examiner (Speaking)</h3>
               <p className="text-gray-700 mb-4 leading-relaxed">
                 Good morning/afternoon. I'm your IELTS examiner today. This speaking test will take 
-                about 11-14 minutes. Please speak clearly and answer as fully as possible.
+                about 11-14 minutes. I will ask you questions and you should answer as fully as possible.
+                Please listen carefully when I speak.
               </p>
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-4 rounded-lg">
                 <p className="text-blue-900 font-semibold">
@@ -201,15 +241,42 @@ const SpeakingModule: React.FC<SpeakingModuleProps> = ({ onComplete }) => {
           </div>
         </div>
 
-        {/* Current Question */}
+        {/* Current Question with Audio */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
           <div className="flex items-start space-x-4 mb-6">
-            <MessageSquare className="w-6 h-6 text-indigo-600 mt-1" />
+            <div className="relative">
+              {isQuestionPlaying && (
+                <div className="absolute -inset-1 bg-green-400 rounded-full animate-ping"></div>
+              )}
+              <div className={`${isQuestionPlaying ? 'bg-green-200' : 'bg-indigo-100'} p-3 rounded-full relative`}>
+                <MessageSquare className={`w-6 h-6 ${isQuestionPlaying ? 'text-green-700' : 'text-indigo-600'}`} />
+              </div>
+            </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-800 mb-4 text-lg">
-                Question {responses.length + 1}
-              </h3>
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-lg border border-green-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-800 text-lg">
+                  Question {responses.length + 1}
+                </h3>
+                <button
+                  onClick={() => playQuestion(currentPartData.questions[currentQuestion])}
+                  className="flex items-center space-x-2 bg-green-100 hover:bg-green-200 text-green-700 px-4 py-2 rounded-lg font-medium transition-colors"
+                  disabled={isQuestionPlaying}
+                >
+                  <Speaker className="w-4 h-4" />
+                  <span>{isQuestionPlaying ? 'Speaking...' : 'Repeat Question'}</span>
+                </button>
+              </div>
+
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-lg border border-green-200 relative">
+                {isQuestionPlaying && (
+                  <div className="absolute top-3 right-3">
+                    <div className="flex space-x-1">
+                      <div className="w-1 h-4 bg-green-500 animate-pulse" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-1 h-4 bg-green-500 animate-pulse" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-1 h-4 bg-green-500 animate-pulse" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  </div>
+                )}
                 <p className="text-gray-800 text-lg leading-relaxed whitespace-pre-line">
                   {currentPartData.questions[currentQuestion]}
                 </p>
@@ -222,6 +289,14 @@ const SpeakingModule: React.FC<SpeakingModuleProps> = ({ onComplete }) => {
                   </p>
                 </div>
               )}
+
+              {isQuestionPlaying && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-blue-700 text-sm">
+                    🎧 Listen carefully to the examiner's question...
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -229,6 +304,7 @@ const SpeakingModule: React.FC<SpeakingModuleProps> = ({ onComplete }) => {
             onComplete={handleResponseComplete}
             isLongTurn={currentPart === 2}
             questionNumber={responses.length + 1}
+            isQuestionPlaying={isQuestionPlaying}
           />
         </div>
 
@@ -285,21 +361,27 @@ interface SpeakingRecorderProps {
   onComplete: (data: { transcript: string; audioUrl: string }) => void;
   isLongTurn: boolean;
   questionNumber: number;
+  isQuestionPlaying: boolean;
 }
 
-const SpeakingRecorder: React.FC<SpeakingRecorderProps> = ({ onComplete, isLongTurn, questionNumber }) => {
+const SpeakingRecorder: React.FC<SpeakingRecorderProps> = ({ 
+  onComplete, 
+  isLongTurn, 
+  questionNumber,
+  isQuestionPlaying 
+}) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPreparing, setIsPreparing] = useState(isLongTurn);
   const [preparationTime, setPreparationTime] = useState(isLongTurn ? 60 : 0);
   const [recordingTime, setRecordingTime] = useState(0);
   const [transcript, setTranscript] = useState('');
   const [audioUrl, setAudioUrl] = useState('');
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlayingRecording, setIsPlayingRecording] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recognitionRef = useRef<any>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const recordingAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Preparation timer
   useEffect(() => {
@@ -317,6 +399,17 @@ const SpeakingRecorder: React.FC<SpeakingRecorderProps> = ({ onComplete, isLongT
     }
   }, [isRecording]);
 
+  // Reset audio ref when question changes
+  useEffect(() => {
+    return () => {
+      if (recordingAudioRef.current) {
+        recordingAudioRef.current.pause();
+        recordingAudioRef.current = null;
+      }
+      setIsPlayingRecording(false);
+    };
+  }, [questionNumber]);
+
   // Initialize Speech Recognition
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -327,19 +420,18 @@ const SpeakingRecorder: React.FC<SpeakingRecorderProps> = ({ onComplete, isLongT
       recognition.lang = 'en-US';
 
       recognition.onresult = (event: any) => {
-        let interimTranscript = '';
         let finalTranscript = '';
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcriptPiece = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
             finalTranscript += transcriptPiece + ' ';
-          } else {
-            interimTranscript += transcriptPiece;
           }
         }
 
-        setTranscript(prev => prev + finalTranscript);
+        if (finalTranscript) {
+          setTranscript(prev => prev + finalTranscript);
+        }
       };
 
       recognition.onerror = (event: any) => {
@@ -354,7 +446,6 @@ const SpeakingRecorder: React.FC<SpeakingRecorderProps> = ({ onComplete, isLongT
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       
-      // Start audio recording
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
@@ -372,7 +463,6 @@ const SpeakingRecorder: React.FC<SpeakingRecorderProps> = ({ onComplete, isLongT
 
       mediaRecorder.start();
       
-      // Start speech recognition
       if (recognitionRef.current) {
         recognitionRef.current.start();
       }
@@ -407,26 +497,33 @@ const SpeakingRecorder: React.FC<SpeakingRecorderProps> = ({ onComplete, isLongT
       audioUrl: audioUrl
     });
 
-    // Reset
+    // Reset for next question
     setTranscript('');
     setAudioUrl('');
     setRecordingTime(0);
     setIsPreparing(isLongTurn);
     setPreparationTime(isLongTurn ? 60 : 0);
+    if (recordingAudioRef.current) {
+      recordingAudioRef.current.pause();
+      recordingAudioRef.current = null;
+    }
+    setIsPlayingRecording(false);
   };
 
   const togglePlayback = () => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio(audioUrl);
-      audioRef.current.onended = () => setIsPlaying(false);
+    if (!audioUrl) return;
+
+    if (!recordingAudioRef.current) {
+      recordingAudioRef.current = new Audio(audioUrl);
+      recordingAudioRef.current.onended = () => setIsPlayingRecording(false);
     }
 
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
+    if (isPlayingRecording) {
+      recordingAudioRef.current.pause();
+      setIsPlayingRecording(false);
     } else {
-      audioRef.current.play();
-      setIsPlaying(true);
+      recordingAudioRef.current.play();
+      setIsPlayingRecording(true);
     }
   };
 
@@ -471,6 +568,15 @@ const SpeakingRecorder: React.FC<SpeakingRecorderProps> = ({ onComplete, isLongT
         </div>
       )}
 
+      {/* Disable recording while question is playing */}
+      {isQuestionPlaying && !isRecording && (
+        <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-300">
+          <p className="text-blue-700 font-medium">
+            🎧 Please wait for the examiner to finish speaking...
+          </p>
+        </div>
+      )}
+
       {/* Transcript Display */}
       <div className="bg-gray-50 p-4 rounded-lg border-2 border-gray-300 min-h-[120px]">
         <p className="text-sm text-gray-500 mb-2">Live Transcript:</p>
@@ -487,7 +593,8 @@ const SpeakingRecorder: React.FC<SpeakingRecorderProps> = ({ onComplete, isLongT
         {!isRecording ? (
           <button
             onClick={startRecording}
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors shadow-md flex items-center justify-center space-x-2"
+            disabled={isQuestionPlaying}
+            className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-semibold transition-colors shadow-md flex items-center justify-center space-x-2"
           >
             <Mic className="w-5 h-5" />
             <span>Start Recording</span>
@@ -507,8 +614,8 @@ const SpeakingRecorder: React.FC<SpeakingRecorderProps> = ({ onComplete, isLongT
             onClick={togglePlayback}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors shadow-md flex items-center space-x-2"
           >
-            {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-            <span>{isPlaying ? 'Pause' : 'Play'}</span>
+            {isPlayingRecording ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+            <span>{isPlayingRecording ? 'Pause' : 'Play'}</span>
           </button>
         )}
       </div>
