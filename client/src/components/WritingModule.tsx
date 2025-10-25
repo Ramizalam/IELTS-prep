@@ -3,6 +3,7 @@ import { PenTool, Clock, CheckCircle, AlertCircle, Send, FileText, Lock } from '
 import axios from 'axios';
 import Timer from './Timer';
 import './WritingModule.css';
+import { toast } from 'react-toastify';
 
 interface WritingTest {
   _id: string;
@@ -53,8 +54,15 @@ const WritingModule: React.FC<WritingModuleProps> = ({ onComplete }) => {
         const baseUrl = import.meta.env?.VITE_API_URL || 'http://localhost:5000';
         const response = await axios.get(`${baseUrl}/api/writing`);
         setWritingTest(response.data);
+        toast.success('📋 Writing test loaded successfully!', {
+          position: 'top-right',
+          autoClose: 2000
+        });
       } catch (error) {
         console.error('Error fetching writing test:', error);
+        toast.error('❌ Failed to load writing test. Please check your connection.', {
+          autoClose: 4000
+        });
       } finally {
         setLoading(false);
       }
@@ -86,6 +94,43 @@ const WritingModule: React.FC<WritingModuleProps> = ({ onComplete }) => {
     setTask2WordCount(countWords(task2Text));
   }, [task2Text]);
 
+  // Toast notifications for word count milestones
+  useEffect(() => {
+    if (!writingTest) return;
+
+    // Task 1 milestone notifications
+    if (task1WordCount === 50) {
+      toast.info('💪 50 words written! Keep going!', { autoClose: 2000 });
+    } else if (task1WordCount === 100) {
+      toast.info('🎯 100 words! Almost there for Task 1!', { autoClose: 2000 });
+    } else if (task1WordCount === writingTest.task1.wordCount) {
+      toast.success('✅ Task 1 word count requirement met! You can now move to Task 2!', {
+        autoClose: 3000
+      });
+    } else if (task1WordCount === 200) {
+      toast.success('🌟 Excellent! You have more than enough words for Task 1!', {
+        autoClose: 2000
+      });
+    }
+  }, [task1WordCount, writingTest]);
+
+  useEffect(() => {
+    if (!writingTest) return;
+
+    // Task 2 milestone notifications
+    if (task2WordCount === 100) {
+      toast.info('💪 100 words! Keep writing!', { autoClose: 2000 });
+    } else if (task2WordCount === 200) {
+      toast.info('🎯 200 words! Almost there for Task 2!', { autoClose: 2000 });
+    } else if (task2WordCount === writingTest.task2.wordCount) {
+      toast.success('✅ Task 2 word count requirement met! Great job!', {
+        autoClose: 3000
+      });
+    } else if (task2WordCount === 300) {
+      toast.success('🌟 Excellent essay length!', { autoClose: 2000 });
+    }
+  }, [task2WordCount, writingTest]);
+
   // Handle text changes
   const handleTask1Change = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setTask1Text(e.target.value);
@@ -103,10 +148,23 @@ const WritingModule: React.FC<WritingModuleProps> = ({ onComplete }) => {
   // Handle task switching
   const handleTaskSwitch = (task: 'task1' | 'task2') => {
     if (task === 'task2' && !isTask1Complete()) {
-      alert(`⚠️ Please complete Task 1 first!\n\nYou need at least ${writingTest?.task1.wordCount} words. You have ${task1WordCount} words.`);
+      toast.warn(`⚠️ Please complete Task 1 first!\n\nYou need at least ${writingTest?.task1.wordCount} words. You have ${task1WordCount} words.`, {
+        autoClose: 4000
+      });
       return;
     }
+    
     setActiveTask(task);
+    
+    if (task === 'task1') {
+      toast.info('📝 Switched to Task 1 - Report Writing', {
+        autoClose: 2000
+      });
+    } else {
+      toast.info('✍️ Switched to Task 2 - Essay Writing', {
+        autoClose: 2000
+      });
+    }
   };
 
   // Evaluate Task 1
@@ -165,34 +223,83 @@ const WritingModule: React.FC<WritingModuleProps> = ({ onComplete }) => {
   const handleSubmit = () => {
     if (!writingTest) return;
 
+    // Validation checks
     if (task1WordCount < writingTest.task1.wordCount) {
-      alert(`Task 1 requires at least ${writingTest.task1.wordCount} words. You have ${task1WordCount} words.`);
+      toast.error(`❌ Task 1 requires at least ${writingTest.task1.wordCount} words. You have ${task1WordCount} words.`, {
+        autoClose: 4000
+      });
       return;
     }
 
     if (task2WordCount < writingTest.task2.wordCount) {
-      alert(`Task 2 requires at least ${writingTest.task2.wordCount} words. You have ${task2WordCount} words.`);
+      toast.error(`❌ Task 2 requires at least ${writingTest.task2.wordCount} words. You have ${task2WordCount} words.`, {
+        autoClose: 4000
+      });
+      return;
+    }
+
+    // Check if both tasks have content
+    if (!task1Text.trim()) {
+      toast.error('❌ Please write your response for Task 1!', {
+        autoClose: 3000
+      });
+      return;
+    }
+
+    if (!task2Text.trim()) {
+      toast.error('❌ Please write your response for Task 2!', {
+        autoClose: 3000
+      });
       return;
     }
 
     setSubmitting(true);
 
-    const task1Score = evaluateTask1(task1Text);
-    const task2Score = evaluateTask2(task2Text);
-    
-    onComplete({
-      task1Score,
-      task2Score,
-      task1Response: task1Text,
-      task2Response: task2Text,
-      timeSpent
+    // Show submitting toast
+    const submittingToast = toast.loading('📤 Submitting your writing test...', {
+      position: 'top-center'
     });
+
+    // Simulate submission delay (for evaluation)
+    setTimeout(() => {
+      const task1Score = evaluateTask1(task1Text);
+      const task2Score = evaluateTask2(task2Text);
+      
+      // Update toast to success
+      toast.update(submittingToast, {
+        render: '✅ Writing test submitted successfully!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000
+      });
+
+      // Show scores preview
+      setTimeout(() => {
+        toast.info(`📊 Task 1 Score: ${task1Score.toFixed(1)} | Task 2 Score: ${task2Score.toFixed(1)}`, {
+          autoClose: 5000
+        });
+      }, 500);
+
+      onComplete({
+        task1Score,
+        task2Score,
+        task1Response: task1Text,
+        task2Response: task2Text,
+        timeSpent
+      });
+    }, 1500);
   };
 
   // Time up handler
   const handleTimeUp = () => {
-    alert('⏰ Time is up! Your test will be submitted automatically.');
-    handleSubmit();
+    toast.error('⏰ Time is up! Your test will be submitted automatically.', {
+      autoClose: 3000,
+      position: 'top-center'
+    });
+    
+    setTimeout(() => {
+      handleSubmit();
+    }, 1000);
   };
 
   // Get progress percentage
@@ -496,7 +603,7 @@ Remember to:
               <div className="response-header">
                 <h3 className="response-title">Your Essay</h3>
                 <div className="word-counter-badge">
-                  <span className={`counter-number ${task2WordCount >= writingTest.task2.wordCount ? 'complete' : 'incomplete'}`}>
+                  <span className={`counter-number ${task2WordCount >= writingTest.task2.wordCount ? 'complete' : 'insufficient'}`}>
                     {task2WordCount}
                   </span>
                   <span className="counter-label">
