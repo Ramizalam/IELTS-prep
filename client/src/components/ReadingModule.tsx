@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Clock } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import Timer from './Timer';
 
 interface ReadingModuleProps {
@@ -12,12 +12,101 @@ const ReadingModule: React.FC<ReadingModuleProps> = ({ onComplete }) => {
   const [timeSpent, setTimeSpent] = useState(0);
 
   const correctAnswers = [
-    // Passage 1 (1-13)
-    'B', 'A', 'C', 'B', 'A', 'TRUE', 'FALSE', 'NOT GIVEN', 'TRUE', 'FALSE', 'education', 'technology', 'communication',
-    // Passage 2 (14-26)
-    'iv', 'vii', 'ii', 'i', 'vi', 'C', 'A', 'B', 'D', 'innovation', 'research', 'development', 'market',
-    // Passage 3 (27-40)
-    'YES', 'NO', 'NOT GIVEN', 'YES', 'NO', 'D', 'B', 'A', 'C', 'B', 'sustainability', 'environment', 'future', 'challenges'
+    // Passage 1 (1-10) - Updated with new questions
+    'C', 'B', 'D', 'D', 'B', 'C', 'C', 'B', 'B', 'C',
+    // Passage 2 (11-25) - Updated with new questions
+    'B', 'B', 'B', 'C', 'B', 'C', 'B', 'C', 'C', 'C', 'B', 'B', 'B', 'A', 'C',
+    // Passage 3 (26-40) - Updated with new questions
+    'B', 'C', 'B', 'B', 'B', 'B', 'B', 'B', 'C', 'B', 'B', 'C', 'A', 'B', 'B'
+  ];
+
+  const passage1Options = [
+    // Question 1 options
+    ['Sustainable city designs', 'Smart city technologies', 'Simple grid systems', 'Green infrastructure'],
+    // Question 2 options
+    ['World War I', 'The Industrial Revolution', 'The Renaissance', 'The Green Revolution'],
+    // Question 3 options
+    ['Overcrowding', 'Pollution', 'Inadequate infrastructure', 'Advanced transportation systems'],
+    // Question 4 options
+    ['Daniel Burnham', 'Frederick Law Olmsted', 'Jane Jacobs', 'Ebenezer Howard'],
+    // Question 5 options
+    ['To promote industrial development', 'To combine city and country living', 'To expand urban sprawl', 'To increase car usage'],
+    // Question 6 options
+    ['Greenbelts and self-contained communities', 'Small-scale housing and pedestrian areas', 'Large-scale housing projects and car-centric design', 'Renewable energy systems'],
+    // Question 7 options
+    ['Daniel Burnham', 'Ebenezer Howard', 'Jane Jacobs', 'Frederick Law Olmsted'],
+    // Question 8 options
+    ['Industrial growth', 'Walkability and sustainability', 'Expansion of highways', 'High-rise development'],
+    // Question 9 options
+    ['Car-centric layouts', 'Smart city technologies', 'Isolated housing projects', 'Factory-centered cities'],
+    // Question 10 options
+    ['It will reduce technology use', 'It will focus only on rural areas', 'It will involve more technology and community participation', 'It will return to grid-based designs']
+  ];
+
+  const passage2Options = [
+    // Question 1 options
+    ['AI is replacing doctors in hospitals', 'AI is transforming healthcare delivery and patient outcomes', 'AI is mainly used for entertainment', 'AI is reducing the number of healthcare workers'],
+    // Question 2 options
+    ['Surgery', 'Diagnostic imaging', 'Nursing', 'Dentistry'],
+    // Question 3 options
+    ['Only skin diseases', 'Early-stage cancers and cardiovascular diseases', 'Only fractures', 'Emotional conditions'],
+    // Question 4 options
+    ['Because it is cheaper than traditional machines', 'Because it replaces nurses', 'Because of a shortage of specialist radiologists', 'Because it does not require electricity'],
+    // Question 5 options
+    ['By manufacturing drugs faster', 'By predicting how compounds interact with biological targets', 'By marketing drugs to hospitals', 'By reducing drug side effects directly'],
+    // Question 6 options
+    ['A few weeks', 'A few months', 'Decades and billions of dollars', 'Only one year'],
+    // Question 7 options
+    ['Days to hours', 'Years to months', 'Centuries to decades', 'Months to days'],
+    // Question 8 options
+    ['Providing the same treatment to all patients', 'Using AI to create generic drugs', 'Tailoring treatment based on individual patient data', 'Reducing the number of doctors'],
+    // Question 9 options
+    ['Only medical histories', 'Only genetic data', 'Genetic data, medical histories, and lifestyle factors', 'Hospital management data'],
+    // Question 10 options
+    ['Reducing hospital visits', 'Increasing drug prices', 'Improving treatment effectiveness and reducing adverse reactions', 'Eliminating the need for human doctors'],
+    // Question 11 options
+    ['Too many radiologists', 'Data privacy concerns', 'Lack of funding for AI research', 'Poor internet connectivity'],
+    // Question 12 options
+    ['The tendency of AI to prefer human doctors', 'Errors in AI decisions due to biased training data', 'A type of medical treatment', 'A new diagnostic tool'],
+    // Question 13 options
+    ['They make AI devices cheaper', 'They ensure AI medical devices are safe and effective', 'They promote competition among doctors', 'They increase hospital profits'],
+    // Question 14 options
+    ['Training', 'New hospital buildings', 'Government funding', 'More patients'],
+    // Question 15 options
+    ['AI will replace all medical professionals', 'AI\'s benefits are limited and temporary', 'AI will become an indispensable tool in modern medicine', 'AI should be banned due to ethical issues']
+  ];
+
+  const passage3Options = [
+    // Question 1 options
+    ['Climate change only affects coastal regions', 'Climate change is a major threat to global food security', 'Agriculture no longer depends on climate', 'Farming practices are identical worldwide'],
+    // Question 2 options
+    ['Rising temperatures', 'Changing rainfall patterns', 'Improved soil fertility everywhere', 'Extreme weather events'],
+    // Question 3 options
+    ['They always increase crop production', 'They have complex effects; some areas gain while others lose productivity', 'They have no effect on agriculture', 'They improve only tropical crops'],
+    // Question 4 options
+    ['Corn, beans, and potatoes', 'Wheat, rice, and maize', 'Cotton, coffee, and sugarcane', 'Apples, bananas, and grapes'],
+    // Question 5 options
+    ['Crops grow faster and stronger', 'Crops exceed their thermal tolerance', 'Rainfall increases evenly', 'New crops are easily introduced'],
+    // Question 6 options
+    ['Rainfall has become more predictable', 'Droughts and floods are both becoming more frequent', 'All regions are getting more rainfall', 'Rivers are freezing more often'],
+    // Question 7 options
+    ['It improves crop diversity', 'It disrupts traditional planting and harvesting cycles', 'It encourages farmers to use more fertilizers', 'It increases the size of farms'],
+    // Question 8 options
+    ['By reducing sunlight for crops', 'Through saltwater intrusion into farmland', 'By cooling the oceans', 'By increasing crop pollination'],
+    // Question 9 options
+    ['Mountain regions', 'Polar regions', 'Small island states and low-lying coastal areas', 'Desert regions'],
+    // Question 10 options
+    ['Developed countries', 'Developing countries in sub-Saharan Africa and parts of Asia', 'Northern Europe', 'North America'],
+    // Question 11 options
+    ['They have too much technology', 'They rely heavily on rain-fed agriculture and lack infrastructure', 'They grow only one crop type', 'They export most of their food'],
+    // Question 12 options
+    ['Developing climate-resilient crops', 'Diversifying farming practices', 'Building more urban areas', 'Improving water management systems'],
+    // Question 13 options
+    ['It helps farmers optimize inputs and reduce waste', 'It increases fertilizer dependency', 'It limits crop rotation', 'It replaces all manual labor'],
+    // Question 14 options
+    ['It focuses only on economic growth', 'It reduces greenhouse gas emissions to limit climate change severity', 'It eliminates all agricultural risks', 'It ensures equal food distribution'],
+    // Question 15 options
+    ['National isolation', 'International cooperation and technology sharing', 'Reducing scientific research', 'Relying solely on local farmers']
   ];
 
   const passages = [
@@ -34,7 +123,7 @@ const ReadingModule: React.FC<ReadingModuleProps> = ({ onComplete }) => {
       Today's urban planning emphasizes sustainability, walkability, and community engagement. Smart city technologies are being integrated to improve efficiency and quality of life. Cities are now designed with climate change in mind, incorporating green infrastructure, renewable energy systems, and resilient design principles.
 
       The future of urban planning will likely involve even greater integration of technology, more participatory planning processes, and innovative solutions to address growing populations and environmental challenges.`,
-      questions: 13
+      questions: 10
     },
     {
       title: 'Artificial Intelligence in Healthcare',
@@ -51,7 +140,7 @@ const ReadingModule: React.FC<ReadingModuleProps> = ({ onComplete }) => {
       Regulatory frameworks are still developing to ensure AI medical devices meet safety and efficacy standards. Healthcare professionals need training to effectively integrate AI tools into their practice while maintaining the human touch that is essential to patient care.
 
       Despite these challenges, the potential benefits of AI in healthcare are immense. As technology continues to advance and regulatory frameworks mature, AI will likely become an indispensable tool in modern medicine.`,
-      questions: 13
+      questions: 15
     },
     {
       title: 'Climate Change and Global Food Security',
@@ -70,7 +159,7 @@ const ReadingModule: React.FC<ReadingModuleProps> = ({ onComplete }) => {
       However, adaptation alone may not be sufficient. Mitigation efforts to reduce greenhouse gas emissions are crucial to limit the severity of climate impacts. Agriculture itself is both a victim and a contributor to climate change, responsible for significant greenhouse gas emissions through livestock production, rice cultivation, and deforestation.
 
       International cooperation is essential to address these challenges. Technology transfer, financial support for adaptation measures, and coordinated research efforts are all necessary components of a global response to climate change and food security challenges.`,
-      questions: 14
+      questions: 15
     }
   ];
 
@@ -122,8 +211,8 @@ const ReadingModule: React.FC<ReadingModuleProps> = ({ onComplete }) => {
 
   const getQuestionStartIndex = (passageNum: number) => {
     if (passageNum === 1) return 0;
-    if (passageNum === 2) return 13;
-    return 26;
+    if (passageNum === 2) return 10;
+    return 25;
   };
 
   const renderQuestions = (passageNum: number) => {
@@ -148,50 +237,50 @@ const ReadingModule: React.FC<ReadingModuleProps> = ({ onComplete }) => {
   const getQuestionText = (index: number, passageNum: number) => {
     const questionTexts: { [key: number]: string[] } = {
       1: [
-        'What was the main cause of urban growth challenges?',
+        'What was the main characteristic of early 1900s urban planning?',
+        'What major event led to rapid urban growth and new planning challenges?',
+        'Which of the following was not a problem caused by rapid urban growth during the Industrial Revolution?',
         'Who introduced the Garden City concept?',
-        'What did critics say about modernist planning?',
-        'What is emphasized in today\'s urban planning?',
-        'What will future planning likely involve?',
-        'The Industrial Revolution led to overcrowding in cities.',
-        'Daniel Burnham worked alone on city planning.',
-        'The Garden City concept was introduced in 1898.',
-        'Jane Jacobs supported modernist planning.',
-        'Smart city technologies improve quality of life.',
-        'Modern planning prioritizes _____ and environmental protection.',
-        'Cities now integrate _____ to improve efficiency.',
-        'Future planning will involve greater _____.'
+        'What was the main goal of the Garden City concept?',
+        'What characterized modernist planning in the mid-20th century?',
+        'Who criticized modernist urban planning for ignoring community life?',
+        'What is a key focus of today\'s urban planning?',
+        'Which of the following is an example of a modern urban planning feature?',
+        'What does the passage suggest about the future of urban planning?'
       ],
       2: [
-        'Which paragraph contains the following information? Choose the correct heading for each paragraph.',
-        'AI in diagnostic imaging',
-        'Drug discovery acceleration',
-        'Personalized medicine advances',
-        'Implementation challenges',
-        'What is the main advantage of AI in medical imaging?',
-        'How has AI affected drug discovery timelines?',
-        'What does personalized medicine analyze?',
-        'What is a major concern about AI in healthcare?',
-        'AI promotes _____ in medical research.',
-        'Machine learning accelerates _____.',
-        'Precision medicine focuses on _____.',
-        'Regulatory frameworks ensure _____.'
+        'What is the main idea of the passage?',
+        'In which area of healthcare is AI being used to detect abnormalities?',
+        'What can AI algorithms detect in medical scans?',
+        'Why is AI particularly useful in diagnostic imaging in some regions?',
+        'How does AI help in drug discovery?',
+        'Traditionally, drug discovery used to take:',
+        'With AI, some pharmaceutical companies have reduced drug discovery timelines from:',
+        'What is the focus of personalized medicine?',
+        'Which type of data is analyzed in personalized medicine?',
+        'What is one major benefit of personalized medicine using AI?',
+        'What is one challenge mentioned regarding AI in healthcare?',
+        'What is "algorithmic bias" in the context of AI healthcare?',
+        'Why are regulatory frameworks important in AI healthcare?',
+        'What do healthcare professionals need to effectively use AI tools?',
+        'What is the passage\'s final outlook on AI in healthcare?'
       ],
       3: [
-        'Climate change definitely threatens food security worldwide.',
-        'All regions will benefit from longer growing seasons.',
-        'Sea-level rise affects coastal agricultural areas.',
-        'Developing countries have adequate adaptive capacity.',
-        'Agriculture contributes to greenhouse gas emissions.',
-        'Which regions face the greatest climate risks?',
-        'What is saltwater intrusion?',
-        'What are precision agriculture technologies used for?',
-        'Why is international cooperation necessary?',
-        'What type of cooperation is mentioned as essential?',
-        'Adaptation strategies focus on _____.',
-        'Climate change affects the _____ negatively.',
-        'Technology and cooperation are needed for the _____.',
-        'Agriculture faces significant _____.'
+        'What is the main idea of the passage?',
+        'Which of the following is not mentioned as an effect of climate change on agriculture?',
+        'How do rising temperatures affect crop yields?',
+        'Which staple crops are specifically mentioned as being affected by heat stress?',
+        'What happens in tropical regions due to rising temperatures?',
+        'How is water availability changing according to the passage?',
+        'What effect does unpredictable rainfall have on farming?',
+        'How does sea-level rise threaten agriculture?',
+        'Which regions are most vulnerable to sea-level rise?',
+        'Which areas face the greatest risk from climate impacts on agriculture?',
+        'Why are these developing regions more vulnerable?',
+        'Which of the following is not an adaptation strategy mentioned in the passage?',
+        'What role does precision agriculture play?',
+        'Why is mitigation important in addition to adaptation?',
+        'What does the passage suggest as essential for addressing food security challenges?'
       ]
     };
 
@@ -203,46 +292,74 @@ const ReadingModule: React.FC<ReadingModuleProps> = ({ onComplete }) => {
   const getQuestionInput = (index: number, questionNum: number, passageNum: number) => {
     const questionIndex = index - getQuestionStartIndex(passageNum);
     
-    // Multiple choice questions
-    if ((passageNum === 1 && questionIndex < 5) || 
-        (passageNum === 2 && questionIndex >= 5 && questionIndex < 9) ||
-        (passageNum === 3 && questionIndex >= 5 && questionIndex < 10)) {
+    // Multiple choice questions for Passage 1 with full options
+    if (passageNum === 1 && questionIndex < 10) {
+      const options = passage1Options[questionIndex];
       return (
         <div className="space-y-2">
-          {['A', 'B', 'C', 'D'].map(option => (
-            <label key={option} className="flex items-center">
-              <input
-                type="radio"
-                name={`q${questionNum}`}
-                value={option}
-                onChange={(e) => handleAnswerChange(index, e.target.value)}
-                className="mr-2"
-              />
-              {option}
-            </label>
-          ))}
+          {options.map((option, optionIndex) => {
+            const letter = String.fromCharCode(65 + optionIndex); // A, B, C, D
+            return (
+              <label key={letter} className="flex items-center">
+                <input
+                  type="radio"
+                  name={`q${questionNum}`}
+                  value={letter}
+                  onChange={(e) => handleAnswerChange(index, e.target.value)}
+                  className="mr-2"
+                />
+                <span className="text-sm">{letter}) {option}</span>
+              </label>
+            );
+          })}
         </div>
       );
     }
-
-    // True/False/Not Given or Yes/No/Not Given
-    if ((passageNum === 1 && questionIndex >= 5 && questionIndex < 10) ||
-        (passageNum === 3 && questionIndex < 5)) {
-      const options = passageNum === 1 ? ['TRUE', 'FALSE', 'NOT GIVEN'] : ['YES', 'NO', 'NOT GIVEN'];
+    
+    // Multiple choice questions for Passage 2 with full options
+    if (passageNum === 2 && questionIndex < 15) {
+      const options = passage2Options[questionIndex];
       return (
         <div className="space-y-2">
-          {options.map(option => (
-            <label key={option} className="flex items-center">
-              <input
-                type="radio"
-                name={`q${questionNum}`}
-                value={option}
-                onChange={(e) => handleAnswerChange(index, e.target.value)}
-                className="mr-2"
-              />
-              {option}
-            </label>
-          ))}
+          {options.map((option, optionIndex) => {
+            const letter = String.fromCharCode(65 + optionIndex); // A, B, C, D
+            return (
+              <label key={letter} className="flex items-center">
+                <input
+                  type="radio"
+                  name={`q${questionNum}`}
+                  value={letter}
+                  onChange={(e) => handleAnswerChange(index, e.target.value)}
+                  className="mr-2"
+                />
+                <span className="text-sm">{letter}) {option}</span>
+              </label>
+            );
+          })}
+        </div>
+      );
+    }
+    
+    // Multiple choice questions for Passage 3 with full options
+    if (passageNum === 3 && questionIndex < 15) {
+      const options = passage3Options[questionIndex];
+      return (
+        <div className="space-y-2">
+          {options.map((option, optionIndex) => {
+            const letter = String.fromCharCode(65 + optionIndex); // A, B, C, D
+            return (
+              <label key={letter} className="flex items-center">
+                <input
+                  type="radio"
+                  name={`q${questionNum}`}
+                  value={letter}
+                  onChange={(e) => handleAnswerChange(index, e.target.value)}
+                  className="mr-2"
+                />
+                <span className="text-sm">{letter}) {option}</span>
+              </label>
+            );
+          })}
         </div>
       );
     }
@@ -314,7 +431,7 @@ const ReadingModule: React.FC<ReadingModuleProps> = ({ onComplete }) => {
             <h3 className="text-lg font-semibold mb-6">
               Questions for Passage {currentPassage}
             </h3>
-            <div className="space-y-4 max-h-96 overflow-y-auto">
+            <div className="space-y-4 max-h-[600px] overflow-y-auto">
               {renderQuestions(currentPassage)}
             </div>
           </div>
