@@ -393,7 +393,7 @@ const ReadingModule: React.FC<ReadingModuleProps> = ({ onComplete }) => {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-2 gap-6 items-start">
           {/* Passage */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex justify-between items-center mb-4">
@@ -431,7 +431,7 @@ const ReadingModule: React.FC<ReadingModuleProps> = ({ onComplete }) => {
             <h3 className="text-lg font-semibold mb-6">
               Questions for Passage {currentPassage}
             </h3>
-            <div className="space-y-4 max-h-[600px] overflow-y-auto">
+            <div className="space-y-4  max-h-[927px] overflow-y-auto">
               {renderQuestions(currentPassage)}
             </div>
           </div>
