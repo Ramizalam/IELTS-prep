@@ -1,6 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { PenTool, Clock, FileText } from 'lucide-react';
+import { PenTool, Clock, CheckCircle, AlertCircle, Send, FileText, Lock } from 'lucide-react';
+import axios from 'axios';
 import Timer from './Timer';
+import './WritingModule.css';
+import { toast } from 'react-toastify';
+
+interface WritingTest {
+  _id: string;
+  task1: {
+    title: string;
+    time: string;
+    wordCount: number;
+    instructions: string;
+    chartDescription: string;
+  };
+  task2: {
+    title: string;
+    time: string;
+    wordCount: number;
+    question: string;
+    tips: string[];
+  };
+}
 
 interface WritingModuleProps {
   onComplete: (results: {
@@ -13,26 +34,153 @@ interface WritingModuleProps {
 }
 
 const WritingModule: React.FC<WritingModuleProps> = ({ onComplete }) => {
-  const [currentTask, setCurrentTask] = useState(1);
-  const [task1Response, setTask1Response] = useState('');
-  const [task2Response, setTask2Response] = useState('');
+  const [writingTest, setWritingTest] = useState<WritingTest | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTask, setActiveTask] = useState<'task1' | 'task2'>('task1');
+  
+  const [task1Text, setTask1Text] = useState('');
+  const [task2Text, setTask2Text] = useState('');
+  
+  const [task1WordCount, setTask1WordCount] = useState(0);
+  const [task2WordCount, setTask2WordCount] = useState(0);
+  
+  const [submitting, setSubmitting] = useState(false);
   const [timeSpent, setTimeSpent] = useState(0);
 
+  // Fetch writing test
+  useEffect(() => {
+    const fetchTest = async () => {
+      try {
+        const baseUrl = import.meta.env?.VITE_API_URL || 'http://localhost:5000';
+        const response = await axios.get(`${baseUrl}/api/writing`);
+        setWritingTest(response.data);
+        toast.success('📋 Writing test loaded successfully!', {
+          position: 'top-right',
+          autoClose: 2000
+        });
+      } catch (error) {
+        console.error('Error fetching writing test:', error);
+        toast.error('❌ Failed to load writing test. Please check your connection.', {
+          autoClose: 4000
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTest();
+  }, []);
+
+  // Auto-start timer when component loads
   useEffect(() => {
     const interval = setInterval(() => {
       setTimeSpent(prev => prev + 1);
     }, 1000);
+    
     return () => clearInterval(interval);
   }, []);
 
+  // Count words
+  const countWords = (text: string): number => {
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  };
+
+  // Update word counts
+  useEffect(() => {
+    setTask1WordCount(countWords(task1Text));
+  }, [task1Text]);
+
+  useEffect(() => {
+    setTask2WordCount(countWords(task2Text));
+  }, [task2Text]);
+
+  // Toast notifications for word count milestones
+  useEffect(() => {
+    if (!writingTest) return;
+
+    // Task 1 milestone notifications
+    if (task1WordCount === 50) {
+      toast.info('💪 50 words written! Keep going!', { autoClose: 2000 });
+    } else if (task1WordCount === 100) {
+      toast.info('🎯 100 words! Almost there for Task 1!', { autoClose: 2000 });
+    } else if (task1WordCount === writingTest.task1.wordCount) {
+      toast.success('✅ Task 1 word count requirement met! You can now move to Task 2!', {
+        autoClose: 3000
+      });
+    } else if (task1WordCount === 200) {
+      toast.success('🌟 Excellent! You have more than enough words for Task 1!', {
+        autoClose: 2000
+      });
+    }
+  }, [task1WordCount, writingTest]);
+
+  useEffect(() => {
+    if (!writingTest) return;
+
+    // Task 2 milestone notifications
+    if (task2WordCount === 100) {
+      toast.info('💪 100 words! Keep writing!', { autoClose: 2000 });
+    } else if (task2WordCount === 200) {
+      toast.info('🎯 200 words! Almost there for Task 2!', { autoClose: 2000 });
+    } else if (task2WordCount === writingTest.task2.wordCount) {
+      toast.success('✅ Task 2 word count requirement met! Great job!', {
+        autoClose: 3000
+      });
+    } else if (task2WordCount === 300) {
+      toast.success('🌟 Excellent essay length!', { autoClose: 2000 });
+    }
+  }, [task2WordCount, writingTest]);
+
+  // Handle text changes
+  const handleTask1Change = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setTask1Text(e.target.value);
+  };
+
+  const handleTask2Change = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setTask2Text(e.target.value);
+  };
+
+  // Check if Task 1 is complete
+  const isTask1Complete = () => {
+    return writingTest && task1WordCount >= writingTest.task1.wordCount;
+  };
+
+  // Handle task switching
+  const handleTaskSwitch = (task: 'task1' | 'task2') => {
+    if (task === 'task2' && !isTask1Complete()) {
+      toast.warn(`⚠️ Please complete Task 1 first!\n\nYou need at least ${writingTest?.task1.wordCount} words. You have ${task1WordCount} words.`, {
+        autoClose: 4000
+      });
+      return;
+    }
+    
+    setActiveTask(task);
+    
+    if (task === 'task1') {
+      toast.info('📝 Switched to Task 1 - Report Writing', {
+        autoClose: 2000
+      });
+    } else {
+      toast.info('✍️ Switched to Task 2 - Essay Writing', {
+        autoClose: 2000
+      });
+    }
+  };
+
+  // Evaluate Task 1
   const evaluateTask1 = (response: string): number => {
     const wordCount = response.trim().split(/\s+/).length;
-    const hasIntroduction = response.toLowerCase().includes('chart') || response.toLowerCase().includes('graph') || response.toLowerCase().includes('table');
-    const hasOverview = response.toLowerCase().includes('overall') || response.toLowerCase().includes('in general');
+    const hasIntroduction = response.toLowerCase().includes('chart') || 
+                           response.toLowerCase().includes('graph') || 
+                           response.toLowerCase().includes('table');
+    const hasOverview = response.toLowerCase().includes('overall') || 
+                       response.toLowerCase().includes('in general');
     const hasData = /\d+/.test(response);
-    const hasComparisons = response.includes('than') || response.includes('compared') || response.includes('whereas');
+    const hasComparisons = response.includes('than') || 
+                          response.includes('compared') || 
+                          response.includes('whereas');
     
-    let score = 4.0; // Base score
+    let score = 4.0;
     
     if (wordCount >= 150) score += 0.5;
     if (wordCount >= 170) score += 0.5;
@@ -45,15 +193,20 @@ const WritingModule: React.FC<WritingModuleProps> = ({ onComplete }) => {
     return Math.min(score, 9.0);
   };
 
+  // Evaluate Task 2
   const evaluateTask2 = (response: string): number => {
     const wordCount = response.trim().split(/\s+/).length;
     const paragraphs = response.split('\n\n').filter(p => p.trim().length > 0).length;
-    const hasPosition = response.toLowerCase().includes('agree') || response.toLowerCase().includes('disagree') || 
-                       response.toLowerCase().includes('believe') || response.toLowerCase().includes('opinion');
-    const hasExamples = response.toLowerCase().includes('example') || response.toLowerCase().includes('instance');
-    const hasConclusion = response.toLowerCase().includes('conclusion') || response.toLowerCase().includes('summary');
+    const hasPosition = response.toLowerCase().includes('agree') || 
+                       response.toLowerCase().includes('disagree') || 
+                       response.toLowerCase().includes('believe') || 
+                       response.toLowerCase().includes('opinion');
+    const hasExamples = response.toLowerCase().includes('example') || 
+                       response.toLowerCase().includes('instance');
+    const hasConclusion = response.toLowerCase().includes('conclusion') || 
+                         response.toLowerCase().includes('summary');
     
-    let score = 4.0; // Base score
+    let score = 4.0;
     
     if (wordCount >= 250) score += 0.5;
     if (wordCount >= 280) score += 0.5;
@@ -66,206 +219,444 @@ const WritingModule: React.FC<WritingModuleProps> = ({ onComplete }) => {
     return Math.min(score, 9.0);
   };
 
+  // Submit test
   const handleSubmit = () => {
-    const task1Score = evaluateTask1(task1Response);
-    const task2Score = evaluateTask2(task2Response);
-    
-    onComplete({
-      task1Score,
-      task2Score,
-      task1Response,
-      task2Response,
-      timeSpent
+    if (!writingTest) return;
+
+    // Validation checks
+    if (task1WordCount < writingTest.task1.wordCount) {
+      toast.error(`❌ Task 1 requires at least ${writingTest.task1.wordCount} words. You have ${task1WordCount} words.`, {
+        autoClose: 4000
+      });
+      return;
+    }
+
+    if (task2WordCount < writingTest.task2.wordCount) {
+      toast.error(`❌ Task 2 requires at least ${writingTest.task2.wordCount} words. You have ${task2WordCount} words.`, {
+        autoClose: 4000
+      });
+      return;
+    }
+
+    // Check if both tasks have content
+    if (!task1Text.trim()) {
+      toast.error('❌ Please write your response for Task 1!', {
+        autoClose: 3000
+      });
+      return;
+    }
+
+    if (!task2Text.trim()) {
+      toast.error('❌ Please write your response for Task 2!', {
+        autoClose: 3000
+      });
+      return;
+    }
+
+    setSubmitting(true);
+
+    // Show submitting toast
+    const submittingToast = toast.loading('📤 Submitting your writing test...', {
+      position: 'top-center'
     });
+
+    // Simulate submission delay (for evaluation)
+    setTimeout(() => {
+      const task1Score = evaluateTask1(task1Text);
+      const task2Score = evaluateTask2(task2Text);
+      
+      // Update toast to success
+      toast.update(submittingToast, {
+        render: '✅ Writing test submitted successfully!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000
+      });
+
+      // Show scores preview
+      setTimeout(() => {
+        toast.info(`📊 Task 1 Score: ${task1Score.toFixed(1)} | Task 2 Score: ${task2Score.toFixed(1)}`, {
+          autoClose: 5000
+        });
+      }, 500);
+
+      onComplete({
+        task1Score,
+        task2Score,
+        task1Response: task1Text,
+        task2Response: task2Text,
+        timeSpent
+      });
+    }, 1500);
   };
 
-  const getWordCount = (text: string) => {
-    return text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+  // Time up handler
+  const handleTimeUp = () => {
+    toast.error('⏰ Time is up! Your test will be submitted automatically.', {
+      autoClose: 3000,
+      position: 'top-center'
+    });
+    
+    setTimeout(() => {
+      handleSubmit();
+    }, 1000);
   };
+
+  // Get progress percentage
+  const getProgress = (current: number, required: number) => {
+    return Math.min((current / required) * 100, 100);
+  };
+
+  if (loading) {
+    return (
+      <div className="writing-loading-container">
+        <div className="loading-spinner"></div>
+        <p className="loading-text">Loading Writing Test...</p>
+      </div>
+    );
+  }
+
+  if (!writingTest) {
+    return (
+      <div className="writing-error-container max-w-4xl mx-auto px-6">
+        <AlertCircle className="error-icon" />
+        <h2>No Writing Test Available</h2>
+        <p>Please contact support or try again later.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-6">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <PenTool className="w-8 h-8 text-blue-600" />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">IELTS Writing Test</h1>
-                <p className="text-gray-600">2 tasks • 60 minutes total</p>
+    <div className="writing-module-container">
+      {/* Top Header Bar */}
+      <div className="writing-top-bar">
+        <div className="top-bar-left">
+          <div className="logo-section">
+            <PenTool className="logo-icon" />
+            <div>
+              <h1 className="module-title">IELTS Writing Test</h1>
+              <p className="module-subtitle">Academic Module • 60 Minutes</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="top-bar-right">
+          <div className="timer-container">
+            <Clock className="timer-icon" />
+            <Timer duration={3600} onTimeUp={handleTimeUp} />
+          </div>
+        </div>
+      </div>
+
+      {/* Progress Overview Bar */}
+      <div className="progress-overview-bar">
+        <div className="progress-card">
+          <div className="progress-header">
+            <FileText size={20} />
+            <span>Task 1 Progress</span>
+          </div>
+          <div className="progress-bar-container">
+            <div 
+              className="progress-bar-fill"
+              style={{ 
+                width: `${getProgress(task1WordCount, writingTest.task1.wordCount)}%`,
+                backgroundColor: task1WordCount >= writingTest.task1.wordCount ? '#10b981' : '#3b82f6'
+              }}
+            />
+          </div>
+          <div className="progress-info">
+            <span className={task1WordCount >= writingTest.task1.wordCount ? 'complete' : 'incomplete'}>
+              {task1WordCount} / {writingTest.task1.wordCount} words
+            </span>
+            {task1WordCount >= writingTest.task1.wordCount && (
+              <CheckCircle className="check-icon" size={16} />
+            )}
+          </div>
+        </div>
+
+        <div className="progress-card">
+          <div className="progress-header">
+            <FileText size={20} />
+            <span>Task 2 Progress</span>
+          </div>
+          <div className="progress-bar-container">
+            <div 
+              className="progress-bar-fill"
+              style={{ 
+                width: `${getProgress(task2WordCount, writingTest.task2.wordCount)}%`,
+                backgroundColor: task2WordCount >= writingTest.task2.wordCount ? '#10b981' : '#3b82f6'
+              }}
+            />
+          </div>
+          <div className="progress-info">
+            <span className={task2WordCount >= writingTest.task2.wordCount ? 'complete' : 'incomplete'}>
+              {task2WordCount} / {writingTest.task2.wordCount} words
+            </span>
+            {task2WordCount >= writingTest.task2.wordCount && (
+              <CheckCircle className="check-icon" size={16} />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Task Navigation Tabs */}
+      <div className="task-tabs-premium">
+        <button
+          onClick={() => handleTaskSwitch('task1')}
+          className={`tab-premium ${activeTask === 'task1' ? 'active' : ''}`}
+        >
+          <div className="tab-content">
+            <div className="tab-header">
+              <span className="tab-number">Task 1</span>
+              <span className="tab-time">20 min</span>
+            </div>
+            <div className="tab-subtitle">Report Writing</div>
+            <div className="tab-word-count">
+              <span className={task1WordCount >= writingTest.task1.wordCount ? 'sufficient' : 'insufficient'}>
+                {task1WordCount} words
+              </span>
+            </div>
+          </div>
+        </button>
+
+        <button
+          onClick={() => handleTaskSwitch('task2')}
+          className={`tab-premium ${activeTask === 'task2' ? 'active' : ''} ${!isTask1Complete() ? 'locked' : ''}`}
+          disabled={!isTask1Complete()}
+          {...(!isTask1Complete() && { 
+            title: `⚠️ Complete Task 1 first (${task1WordCount}/${writingTest.task1.wordCount} words)` 
+          })}
+        >
+          <div className="tab-content">
+            <div className="tab-header">
+              <span className="tab-number">
+                {!isTask1Complete() && <Lock size={14} className="inline mr-1" />}
+                Task 2
+              </span>
+              <span className="tab-time">40 min</span>
+            </div>
+            <div className="tab-subtitle">Essay Writing</div>
+            <div className="tab-word-count">
+              {!isTask1Complete() ? (
+                <span className="locked-text">Complete Task 1 first</span>
+              ) : (
+                <span className={task2WordCount >= writingTest.task2.wordCount ? 'sufficient' : 'insufficient'}>
+                  {task2WordCount} words
+                </span>
+              )}
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="writing-content-grid">
+        {/* Task 1 */}
+        {activeTask === 'task1' && (
+          <>
+            <div className="instructions-panel">
+              <div className="panel-header">
+                <h2 className="panel-title">{writingTest.task1.title}</h2>
+                <div className="task-meta-badges">
+                  <span className="meta-badge time">
+                    <Clock size={14} />
+                    {writingTest.task1.time}
+                  </span>
+                  <span className="meta-badge words">
+                    <FileText size={14} />
+                    Min. {writingTest.task1.wordCount} words
+                  </span>
+                </div>
+              </div>
+
+              <div className="instructions-box">
+                <div className="instructions-header">
+                  <span className="instructions-label">📋 Instructions</span>
+                </div>
+                <p className="instructions-text">{writingTest.task1.instructions}</p>
+              </div>
+
+              <div className="chart-data-box">
+                <div className="chart-header">
+                  <span className="chart-label">📊 Chart Data</span>
+                </div>
+                <pre className="chart-content">{writingTest.task1.chartDescription}</pre>
+              </div>
+
+              <div className="tips-box task1-tips">
+                <h4>💡 Writing Tips for Task 1:</h4>
+                <ul>
+                  <li>Start with an overview of the main trends</li>
+                  <li>Use specific data from the chart</li>
+                  <li>Make comparisons between countries</li>
+                  <li>Use appropriate linking words</li>
+                </ul>
               </div>
             </div>
-            <Timer duration={60 * 60} onTimeUp={handleSubmit} />
-          </div>
-        </div>
 
-        {/* Task Navigation */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex justify-between items-center">
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setCurrentTask(1)}
-                className={`px-4 py-2 rounded-md font-medium ${
-                  currentTask === 1
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Task 1
-              </button>
-              <button
-                onClick={() => setCurrentTask(2)}
-                className={`px-4 py-2 rounded-md font-medium ${
-                  currentTask === 2
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Task 2
-              </button>
-            </div>
-            
-            <div className="text-sm text-gray-500">
-              Recommended time: Task 1 - 20 min • Task 2 - 40 min
-            </div>
-          </div>
-        </div>
-
-        {currentTask === 1 && (
-          <div className="grid lg:grid-cols-2 gap-6">
-            {/* Task 1 Instructions */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Writing Task 1</h2>
-              <div className="mb-6">
-                <p className="text-gray-700 mb-4">
-                  <strong>Time:</strong> 20 minutes<br />
-                  <strong>Word count:</strong> At least 150 words
-                </p>
-                
-                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
-                  <h3 className="font-semibold text-blue-800 mb-2">Task Instructions</h3>
-                  <p className="text-blue-700">
-                    The chart below shows the percentage of households with different types of internet 
-                    connections in three countries from 2010 to 2020.
-                  </p>
-                  <p className="text-blue-700 mt-2">
-                    Summarize the information by selecting and reporting the main features, and make 
-                    comparisons where relevant.
-                  </p>
+            <div className="response-panel">
+              <div className="response-header">
+                <h3 className="response-title">Your Response</h3>
+                <div className="word-counter-badge">
+                  <span className={`counter-number ${task1WordCount >= writingTest.task1.wordCount ? 'complete' : 'incomplete'}`}>
+                    {task1WordCount}
+                  </span>
+                  <span className="counter-label">
+                    / {writingTest.task1.wordCount} words
+                  </span>
                 </div>
+              </div>
 
-                {/* Simulated Chart Data */}
-                <div className="bg-gray-100 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-3">Internet Connection Types by Country (2010-2020)</h4>
-                  <div className="text-sm">
-                    <p><strong>Broadband:</strong></p>
-                    <p>Country A: 45% (2010) → 85% (2020)</p>
-                    <p>Country B: 30% (2010) → 75% (2020)</p>
-                    <p>Country C: 25% (2010) → 65% (2020)</p>
-                    
-                    <p className="mt-2"><strong>Mobile Internet:</strong></p>
-                    <p>Country A: 15% (2010) → 70% (2020)</p>
-                    <p>Country B: 20% (2010) → 80% (2020)</p>
-                    <p>Country C: 10% (2010) → 60% (2020)</p>
+              <textarea
+                value={task1Text}
+                onChange={handleTask1Change}
+                disabled={submitting}
+                className="response-textarea-premium"
+                placeholder="Begin typing your response here... 
+                
+Remember to:
+• Paraphrase the question in your introduction
+• Describe the main features and trends
+• Include specific data from the chart
+• Make relevant comparisons
+• Write at least 150 words"
+                autoFocus
+              />
+
+              <div className="textarea-footer">
+                <div className="footer-stats">
+                  {task1WordCount < writingTest.task1.wordCount ? (
+                    <span className="words-needed">
+                      {writingTest.task1.wordCount - task1WordCount} more words needed
+                    </span>
+                  ) : (
+                    <span className="words-complete">
+                      ✓ Word count requirement met - You can now move to Task 2
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Task 2 */}
+        {activeTask === 'task2' && (
+          <>
+            <div className="instructions-panel">
+              <div className="panel-header">
+                <h2 className="panel-title">{writingTest.task2.title}</h2>
+                <div className="task-meta-badges">
+                  <span className="meta-badge time">
+                    <Clock size={14} />
+                    {writingTest.task2.time}
+                  </span>
+                  <span className="meta-badge words">
+                    <FileText size={14} />
+                    Min. {writingTest.task2.wordCount} words
+                  </span>
+                </div>
+              </div>
+
+              <div className="question-box">
+                <div className="question-header">
+                  <span className="question-label">📝 Essay Question</span>
+                </div>
+                <p className="question-text">{writingTest.task2.question}</p>
+              </div>
+
+              {writingTest.task2.tips && writingTest.task2.tips.length > 0 && (
+                <div className="tips-box task2-tips">
+                  <h4>💡 Writing Tips for Task 2:</h4>
+                  <ul>
+                    {writingTest.task2.tips.map((tip, index) => (
+                      <li key={index}>{tip}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="structure-guide">
+                <h4>📚 Suggested Essay Structure:</h4>
+                <div className="structure-steps">
+                  <div className="structure-step">
+                    <span className="step-number">1</span>
+                    <span className="step-text">Introduction (40-50 words)</span>
+                  </div>
+                  <div className="structure-step">
+                    <span className="step-number">2</span>
+                    <span className="step-text">Body Paragraph 1 (70-80 words)</span>
+                  </div>
+                  <div className="structure-step">
+                    <span className="step-number">3</span>
+                    <span className="step-text">Body Paragraph 2 (70-80 words)</span>
+                  </div>
+                  <div className="structure-step">
+                    <span className="step-number">4</span>
+                    <span className="step-text">Conclusion (40-50 words)</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Task 1 Response */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Your Response</h3>
-                <div className="flex items-center space-x-4">
-                  <span className={`text-sm ${getWordCount(task1Response) >= 150 ? 'text-green-600' : 'text-red-600'}`}>
-                    {getWordCount(task1Response)} words
+            <div className="response-panel">
+              <div className="response-header">
+                <h3 className="response-title">Your Essay</h3>
+                <div className="word-counter-badge">
+                  <span className={`counter-number ${task2WordCount >= writingTest.task2.wordCount ? 'complete' : 'insufficient'}`}>
+                    {task2WordCount}
                   </span>
-                  <span className="text-sm text-gray-500">
-                    (minimum: 150)
+                  <span className="counter-label">
+                    / {writingTest.task2.wordCount} words
                   </span>
                 </div>
               </div>
-              
+
               <textarea
-                value={task1Response}
-                onChange={(e) => setTask1Response(e.target.value)}
-                className="w-full h-96 p-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                placeholder="Write your response here..."
+                value={task2Text}
+                onChange={handleTask2Change}
+                disabled={submitting}
+                className="response-textarea-premium"
+                placeholder="Begin writing your essay here...
+
+Remember to:
+• Clearly state your position
+• Discuss both views if required
+• Support your arguments with examples
+• Organize your essay into clear paragraphs
+• Write a strong conclusion
+• Write at least 250 words"
+                autoFocus
               />
-            </div>
-          </div>
-        )}
 
-        {currentTask === 2 && (
-          <div className="grid lg:grid-cols-2 gap-6">
-            {/* Task 2 Instructions */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Writing Task 2</h2>
-              <div className="mb-6">
-                <p className="text-gray-700 mb-4">
-                  <strong>Time:</strong> 40 minutes<br />
-                  <strong>Word count:</strong> At least 250 words
-                </p>
-                
-                <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
-                  <h3 className="font-semibold text-green-800 mb-2">Essay Question</h3>
-                  <p className="text-green-700 mb-3">
-                    Many people believe that social media has had a negative impact on society, 
-                    particularly on young people. Others argue that social media has brought 
-                    significant benefits to communication and information sharing.
-                  </p>
-                  <p className="text-green-700 font-medium">
-                    Discuss both views and give your own opinion.
-                  </p>
-                </div>
-
-                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-                  <h4 className="font-semibold text-yellow-800 mb-2">Writing Tips</h4>
-                  <ul className="text-sm text-yellow-700 space-y-1">
-                    <li>• Present both sides of the argument clearly</li>
-                    <li>• Give your own opinion and support it</li>
-                    <li>• Use specific examples where possible</li>
-                    <li>• Organize your essay with clear paragraphs</li>
-                    <li>• Write a strong conclusion</li>
-                  </ul>
+              <div className="textarea-footer">
+                <div className="footer-stats">
+                  {task2WordCount < writingTest.task2.wordCount ? (
+                    <span className="words-needed">
+                      {writingTest.task2.wordCount - task2WordCount} more words needed
+                    </span>
+                  ) : (
+                    <span className="words-complete">
+                      ✓ Word count requirement met
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
-
-            {/* Task 2 Response */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Your Response</h3>
-                <div className="flex items-center space-x-4">
-                  <span className={`text-sm ${getWordCount(task2Response) >= 250 ? 'text-green-600' : 'text-red-600'}`}>
-                    {getWordCount(task2Response)} words
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    (minimum: 250)
-                  </span>
-                </div>
-              </div>
-              
-              <textarea
-                value={task2Response}
-                onChange={(e) => setTask2Response(e.target.value)}
-                className="w-full h-96 p-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                placeholder="Write your essay here..."
-              />
-            </div>
-          </div>
+          </>
         )}
+      </div>
 
-        {/* Submit Button */}
-        <div className="text-center mt-8">
-          <button
-            onClick={handleSubmit}
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
-          >
-            Complete Writing Test
-          </button>
-        </div>
+      {/* Submit Button */}
+      <div className="action-buttons-container">
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="btn-action btn-submit btn-full-width"
+        >
+          <Send size={18} />
+          {submitting ? 'Submitting...' : 'Complete Writing Test'}
+        </button>
       </div>
     </div>
   );
