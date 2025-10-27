@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Headphones, Clock, Play, Pause, Volume2 } from 'lucide-react';
+import { Headphones, Play, Pause, Volume2 } from 'lucide-react';
 import Timer from './Timer';
 
 interface ListeningModuleProps {
@@ -16,6 +16,87 @@ const ListeningModule: React.FC<ListeningModuleProps> = ({ onComplete }) => {
   const [error, setError] = useState<string | null>(null);
   const [sections, setSections] = useState<{ title: string; description: string; questions: string }[]>([]);
   const [correctAnswers, setCorrectAnswers] = useState<(string | number)[]>([]);
+
+  // Section 2 correct answers (questions 11-20)
+  const section2CorrectAnswers = ['B', 'C', 'C', 'B', 'D', 'A', 'B', 'B', 'C', 'C'];
+
+  // Section 2 question options
+  const section2Options = [
+    // Question 1 options
+    ['A library', 'A railway station', 'A school', 'A government office'],
+    // Question 2 options
+    ['On the right of the main hall', 'Upstairs on the second floor', 'On the left of the main hall', 'Behind the café'],
+    // Question 3 options
+    ['Riverdale architecture', 'Ancient artifacts', 'Women in Modern Art', 'Space exploration'],
+    // Question 4 options
+    ['Antique jewelry', 'Postcards and crafts', 'Paintings by local artists', 'Second-hand books'],
+    // Question 5 options
+    ['500', '1,000', '2,500', '5,000'],
+    // Question 6 options
+    ['Members only', 'Everyone', 'Tourists', 'Students'],
+    // Question 7 options
+    ['30 minutes', '45 minutes', '1 hour', '90 minutes'],
+    // Question 8 options
+    ['Sunday', 'Monday', 'Tuesday', 'Saturday'],
+    // Question 9 options
+    ['£10', '£8', '£6', 'Free'],
+    // Question 10 options
+    ['The café', 'The ticket counter', 'The Information Desk', 'The souvenir shop']
+  ];
+
+  // Section 3 correct answers (questions 21-30)
+  const section3CorrectAnswers = ['B', 'B', 'C', 'C', 'B', 'A', 'B', 'B', 'B', 'B'];
+
+  // Section 3 question options
+  const section3Options = [
+    // Question 1 options
+    ['The use of smartphones in education', 'The effect of social media on students\' study habits', 'The impact of group study on grades', 'The rise of online learning'],
+    // Question 2 options
+    ['It\'s a popular research area', 'They noticed their classmates using social media while studying', 'Their tutor suggested it', 'It\'s easy to collect data for it'],
+    // Question 3 options
+    ['Through interviews only', 'By reviewing articles', 'Using an online questionnaire', 'By conducting experiments'],
+    // Question 4 options
+    ['Observations', 'Surveys of teachers', 'Conducting interviews', 'Reading journal articles'],
+    // Question 5 options
+    ['20 to 30', '50 to 60', '70 to 80', 'Over 100'],
+    // Question 6 options
+    ['Both quantitative and qualitative data', 'Only numerical data', 'Only interview data', 'Historical data'],
+    // Question 7 options
+    ['At the end of this month', 'On the 15th of next month', 'Two weeks from now', 'June 30th'],
+    // Question 8 options
+    ['APA', 'Harvard', 'MLA', 'Chicago'],
+    // Question 9 options
+    ['Monday to Friday, 9 a.m. – 5 p.m.', 'Monday to Friday, 10 a.m. – 4 p.m.', 'Weekends only', 'Every day, 8 a.m. – 6 p.m.'],
+    // Question 10 options
+    ['Focus on grammar and spelling', 'Keep questions clear, data reliable, and time managed', 'Use as many sources as possible', 'Finish early to get extra credit']
+  ];
+
+  // Section 4 correct answers (questions 31-40)
+  const section4CorrectAnswers = ['B', 'B', 'B', 'C', 'A', 'B', 'B', 'C', 'B', 'A'];
+
+  // Section 4 question options
+  const section4Options = [
+    // Question 1 options
+    ['Energy produced from fossil fuels', 'Energy from natural sources that are constantly replenished', 'Energy generated only from water and wind', 'Energy that is stored in batteries'],
+    // Question 2 options
+    ['Canada', 'India', 'Japan', 'Germany'],
+    // Question 3 options
+    ['They create noise pollution', 'They take up a lot of land and may disturb habitats', 'They produce harmful gases', 'They are unreliable in all climates'],
+    // Question 4 options
+    ['It causes water pollution', 'It releases carbon dioxide', 'It can harm birds and create noise', 'It destroys forests'],
+    // Question 5 options
+    ['Flooding and displacement of people', 'Noise pollution', 'Depletion of groundwater', 'Radiation emissions'],
+    // Question 6 options
+    ['It uses non-renewable materials', 'It releases carbon dioxide when burned', 'It depends heavily on weather conditions', 'It produces toxic waste'],
+    // Question 7 options
+    ['Air pollution from factories', 'Mining rare materials that harm ecosystems', 'Waste from turbine blades', 'Oil leakage'],
+    // Question 8 options
+    ['40% by 2030', '50% by 2040', '70% by 2050', '90% by 2060'],
+    // Question 9 options
+    ['It increases reliance on oil imports', 'It improves energy security and independence', 'It lowers education costs', 'It reduces industrial growth'],
+    // Question 10 options
+    ['High installation costs and storage issues', 'Lack of raw materials', 'Global population growth', 'Weak demand from industries']
+  ];
 
   // Fetch test data from backend
   useEffect(() => {
@@ -66,11 +147,56 @@ const ListeningModule: React.FC<ListeningModuleProps> = ({ onComplete }) => {
     setIsPlaying(false);
   };
 
+  const getAudioSource = () => {
+    const baseUrl = import.meta.env?.VITE_API_URL || 'http://localhost:5000';
+    switch (currentSection) {
+      case 1:
+        return `${baseUrl}/public/Librarian audio.mp3`;
+      case 2:
+        return `${baseUrl}/public/museum audio.mp3`;
+      case 3:
+        return `${baseUrl}/public/Research project.mp3`;
+      case 4:
+        return `${baseUrl}/public/Lecture audio.mp3`;
+      default:
+        return `${baseUrl}/public/Librarian audio.mp3`;
+    }
+  };
+
+  const getAudioLabel = () => {
+    switch (currentSection) {
+      case 1:
+        return 'Library Audio';
+      case 2:
+        return 'Museum Audio';
+      case 3:
+        return 'Research Project Audio';
+      case 4:
+        return 'Lecture Audio';
+      default:
+        return 'Library Audio';
+    }
+  };
+
   const calculateScore = () => {
     let correct = 0;
     answers.forEach((answer, index) => {
       const userAnswer = typeof answer === 'string' ? answer.toLowerCase().trim() : answer.toString();
-      const correctAnswer = correctAnswers[index].toString().toLowerCase();
+      
+      // Use Section 2 correct answers for questions 10-19
+      let correctAnswer;
+      if (index >= 10 && index < 20) {
+        correctAnswer = section2CorrectAnswers[index - 10].toLowerCase();
+      } else if (index >= 20 && index < 30) {
+        // Use Section 3 correct answers for questions 20-29
+        correctAnswer = section3CorrectAnswers[index - 20].toLowerCase();
+      } else if (index >= 30 && index < 40) {
+        // Use Section 4 correct answers for questions 30-39
+        correctAnswer = section4CorrectAnswers[index - 30].toLowerCase();
+      } else {
+        correctAnswer = correctAnswers[index]?.toString().toLowerCase() || '';
+      }
+      
       if (userAnswer === correctAnswer) {
         correct++;
       }
@@ -116,7 +242,7 @@ const ListeningModule: React.FC<ListeningModuleProps> = ({ onComplete }) => {
   };
 
   const getQuestionText = (index: number) => {
-    const texts = [
+    const section1Texts = [
       'What is the main purpose of the student\'s visit?',
       'What time does the library open on weekdays?',
       'What is the librarian\'s surname?',
@@ -128,29 +254,125 @@ const ListeningModule: React.FC<ListeningModuleProps> = ({ onComplete }) => {
       'How many computers are in the study area?',
       'Where should visitors go for help?'
     ];
+
+    const section2Texts = [
+      'What was the museum building originally used as?',
+      'Where can visitors find the History Gallery?',
+      'What is the theme of the current temporary exhibition?',
+      'What can visitors buy at the souvenir shop?',
+      'How many reference books are in the reading room?',
+      'Who is allowed to borrow books from the reading room?',
+      'How long does each guided tour last?',
+      'On which day is the museum closed?',
+      'How much does a student ticket cost?',
+      'Where should visitors go if they need assistance?'
+    ];
+
+    const section3Texts = [
+      'What is the main topic of the students\' research project?',
+      'Why did the students choose this topic?',
+      'How do the students plan to collect data?',
+      'What additional method does the tutor recommend?',
+      'How many participants should they include in their research?',
+      'What kind of data should the students collect?',
+      'When is the first draft due?',
+      'What referencing style should they use?',
+      'When is the Writing Support Centre open?',
+      'What advice does the tutor give at the end?'
+    ];
+
+    const section4Texts = [
+      'What does renewable energy mainly refer to?',
+      'Which country benefits most from solar energy due to high sunlight exposure?',
+      'What is a disadvantage of large solar farms?',
+      'What is one environmental concern about wind energy?',
+      'What negative impact can hydroelectric dams cause?',
+      'Why is biomass energy considered less clean than other renewable sources?',
+      'What environmental issue is related to producing solar panels?',
+      'According to the lecture, renewable energy could reduce global CO₂ emissions by up to:',
+      'What is one major benefit of renewable energy for countries?',
+      'Which of the following is mentioned as a barrier to renewable energy adoption?'
+    ];
     
-    if (index < 10) return texts[index];
-    if (index < 20) return `Question ${index + 1} - Multiple choice A, B, or C`;
-    if (index < 30) return `Question ${index + 1} - Complete the summary`;
+    if (index < 10) return section1Texts[index];
+    if (index < 20) return section2Texts[index - 10];
+    if (index < 30) return section3Texts[index - 20];
+    if (index < 40) return section4Texts[index - 30];
     return `Question ${index + 1} - Complete the notes`;
   };
 
   const getQuestionInput = (index: number, questionNum: number) => {
-    if (index >= 10 && index < 15) {
+    // Section 2 questions (10-19) with full answer options
+    if (index >= 10 && index < 20) {
+      const questionIndex = index - 10;
+      const options = section2Options[questionIndex];
       return (
         <div className="space-y-2">
-          {['A', 'B', 'C'].map(option => (
-            <label key={option} className="flex items-center">
-              <input
-                type="radio"
-                name={`q${questionNum}`}
-                value={option}
-                onChange={(e) => handleAnswerChange(index, e.target.value)}
-                className="mr-2"
-              />
-              {option}
-            </label>
-          ))}
+          {options.map((option, optionIndex) => {
+            const letter = String.fromCharCode(65 + optionIndex); // A, B, C, D
+            return (
+              <label key={letter} className="flex items-center">
+                <input
+                  type="radio"
+                  name={`q${questionNum}`}
+                  value={letter}
+                  onChange={(e) => handleAnswerChange(index, e.target.value)}
+                  className="mr-2"
+                />
+                <span className="text-sm">{letter}) {option}</span>
+              </label>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // Section 3 questions (20-29) with full answer options
+    if (index >= 20 && index < 30) {
+      const questionIndex = index - 20;
+      const options = section3Options[questionIndex];
+      return (
+        <div className="space-y-2">
+          {options.map((option, optionIndex) => {
+            const letter = String.fromCharCode(65 + optionIndex); // A, B, C, D
+            return (
+              <label key={letter} className="flex items-center">
+                <input
+                  type="radio"
+                  name={`q${questionNum}`}
+                  value={letter}
+                  onChange={(e) => handleAnswerChange(index, e.target.value)}
+                  className="mr-2"
+                />
+                <span className="text-sm">{letter}) {option}</span>
+              </label>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // Section 4 questions (30-39) with full answer options
+    if (index >= 30 && index < 40) {
+      const questionIndex = index - 30;
+      const options = section4Options[questionIndex];
+      return (
+        <div className="space-y-2">
+          {options.map((option, optionIndex) => {
+            const letter = String.fromCharCode(65 + optionIndex); // A, B, C, D
+            return (
+              <label key={letter} className="flex items-center">
+                <input
+                  type="radio"
+                  name={`q${questionNum}`}
+                  value={letter}
+                  onChange={(e) => handleAnswerChange(index, e.target.value)}
+                  className="mr-2"
+                />
+                <span className="text-sm">{letter}) {option}</span>
+              </label>
+            );
+          })}
         </div>
       );
     }
@@ -198,7 +420,7 @@ const ListeningModule: React.FC<ListeningModuleProps> = ({ onComplete }) => {
             <h3 className="text-lg font-semibold">Audio Player</h3>
             <div className="flex items-center space-x-2">
               <Volume2 className="w-5 h-5 text-gray-500" />
-              <span className="text-sm text-gray-500">Library Audio</span>
+              <span className="text-sm text-gray-500">{getAudioLabel()}</span>
             </div>
           </div>
           
@@ -208,8 +430,9 @@ const ListeningModule: React.FC<ListeningModuleProps> = ({ onComplete }) => {
               onEnded={handleAudioEnded}
               className="w-full mb-4"
               controls
+              key={currentSection} // Force re-render when section changes
             >
-              <source src={`${import.meta.env?.VITE_API_URL || 'http://localhost:5000'}/public/Librarian audio.mp3`} type="audio/mpeg" />
+              <source src={getAudioSource()} type="audio/mpeg" />
               Your browser does not support the audio element.
             </audio>
             
