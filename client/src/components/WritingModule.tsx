@@ -318,7 +318,7 @@ const WritingModule: React.FC<WritingModuleProps> = ({ onComplete }) => {
 
   if (!writingTest) {
     return (
-      <div className="writing-error-container">
+      <div className="writing-error-container max-w-4xl mx-auto px-6">
         <AlertCircle className="error-icon" />
         <h2>No Writing Test Available</h2>
         <p>Please contact support or try again later.</p>

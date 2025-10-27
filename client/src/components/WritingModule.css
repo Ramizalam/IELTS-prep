@@ -730,3 +730,21 @@
 .instructions-panel::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+/* Limit width and center Writing module like Listening */
+.writing-module-container {
+  max-width: 70rem; /* same as max-w-4xl, adjust if needed */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 24px;
+  padding-right: 24px;
+  /* Existing padding, bg, etc., can stay */
+}
+
+/* On large screens, match listening module width */
+@media (max-width: 1200px) {
+  .writing-module-container {
+    max-width: 100%;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
